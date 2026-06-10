@@ -1,0 +1,127 @@
+import cv2
+import numpy as np
+import onnxruntime as ort
+
+
+class PersonDetector:
+
+    def __init__(
+        self,
+        model_path="person.onnx",
+        conf_thres=0.35,
+        iou_thres=0.5,
+        input_width=320,
+        input_height=480
+    ):
+
+        self.conf_thres = conf_thres
+        self.iou_thres = iou_thres
+
+        self.input_width = input_width
+        self.input_height = input_height
+
+        self.session = ort.InferenceSession(
+            model_path,
+            providers=["CUDAExecutionProvider",
+                       "CPUExecutionProvider"]
+        )
+
+        self.input_name = self.session.get_inputs()[0].name
+
+    def preprocess(self, image):
+
+        img = cv2.resize(
+            image,
+            (self.input_width, self.input_height)
+        )
+
+        img = cv2.cvtColor(
+            img,
+            cv2.COLOR_BGR2RGB
+        )
+
+        img = img.astype(np.float32) / 255.0
+
+        img = np.transpose(
+            img,
+            (2, 0, 1)
+        )
+
+        img = np.expand_dims(
+            img,
+            axis=0
+        )
+
+        return img
+
+    def detect(self, frame):
+
+        h, w = frame.shape[:2]
+
+        blob = self.preprocess(frame)
+
+        outputs = self.session.run(
+            None,
+            {
+                self.input_name: blob
+            }
+        )
+
+        predictions = outputs[0][0]
+
+        boxes = []
+        scores = []
+
+        scale_x = w / self.input_width
+        scale_y = h / self.input_height
+
+        for pred in predictions:
+
+            score = float(pred[4])
+
+            if score < self.conf_thres:
+                continue
+
+            cx, cy, bw, bh = pred[:4]
+
+            x1 = int((cx - bw / 2) * scale_x)
+            y1 = int((cy - bh / 2) * scale_y)
+
+            box_w = int(bw * scale_x)
+            box_h = int(bh * scale_y)
+
+            boxes.append(
+                [x1, y1, box_w, box_h]
+            )
+
+            scores.append(score)
+
+        indices = cv2.dnn.NMSBoxes(
+            boxes,
+            scores,
+            self.conf_thres,
+            self.iou_thres
+        )
+
+        detections = []
+
+        if len(indices) > 0:
+
+            for i in indices.flatten():
+
+                x, y, bw, bh = boxes[i]
+
+                detections.append({
+
+                    "x": x,
+                    "y": y,
+                    "w": bw,
+                    "h": bh,
+
+                    "cx": x + bw // 2,
+                    "cy": y + bh // 2,
+
+                    "score": scores[i]
+                })
+
+        return detections
