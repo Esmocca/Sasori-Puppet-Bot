@@ -12,10 +12,6 @@ import time
 
 from std_msgs.msg import String
 
-# =========================
-# CONFIG
-# =========================
-
 CAMERA_DEVICE = "/dev/video0"
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUDRATE = 115200
@@ -38,10 +34,6 @@ SEARCH_TIMEOUT = 30
 SEARCH_YAW_STEP = 2
 SEARCH_PITCH_STEP = 5
 
-# =========================
-# ROS
-# =========================
-
 rospy.init_node("hand_tracking_node")
 
 pub = rospy.Publisher(
@@ -49,10 +41,6 @@ pub = rospy.Publisher(
     String,
     queue_size=10
 )
-
-# =========================
-# SERIAL
-# =========================
 
 ser = None
 
@@ -95,10 +83,6 @@ def reconnect_serial():
 
 connect_serial()
 
-# =========================
-# CAMERA
-# =========================
-
 def open_camera():
 
     while not rospy.is_shutdown():
@@ -135,15 +119,7 @@ def open_camera():
 
         time.sleep(2)
 
-# =========================
-# OPEN CAMERA
-# =========================
-
 cap = open_camera()
-
-# =========================
-# INIT SERVO
-# =========================
 
 yaw = INIT_YAW
 pitch = INIT_PITCH
@@ -199,7 +175,6 @@ def battery_monitor():
         battery = get_battery_percent()
         status = get_battery_status()
 
-        # LOW BATTERY
         if battery < 20 and status != "Charging":
 
             now = time.time()
@@ -209,8 +184,7 @@ def battery_monitor():
                 ser.write(b"LOW_BAT\n")
 
                 last_low_bat = now
-
-        # FULL BATTERY
+                
         if battery >= 100:
 
             if not full_notified:
@@ -230,10 +204,6 @@ threading.Thread(
     target=battery_monitor,
     daemon=True
 ).start()
-
-# =========================
-# SEND INIT POSE
-# =========================
 
 init_data = f"{INIT_YAW},{INIT_PITCH},{INIT_MOUTH}\n"
 
@@ -262,17 +232,10 @@ print(
     f"Pitch:{INIT_PITCH}"
 )
 
-# =========================
-# MAIN LOOP
-# =========================
 
 while not rospy.is_shutdown():
 
     ret, frame = cap.read()
-
-    # =====================
-    # CAMERA RECONNECT
-    # =====================
 
     if not ret:
 
@@ -293,10 +256,6 @@ while not rospy.is_shutdown():
 
         continue
 
-    # =====================
-    # MIRROR
-    # =====================
-
     frame = cv2.flip(
         frame,
         1
@@ -306,10 +265,6 @@ while not rospy.is_shutdown():
 
     center_screen_x = frame_width // 2
     center_screen_y = frame_height // 2
-
-    # =====================
-    # HSV
-    # =====================
 
     hsv = cv2.cvtColor(
         frame,
@@ -355,10 +310,6 @@ while not rospy.is_shutdown():
         0
     )
 
-    # =====================
-    # CONTOUR
-    # =====================
-
     contours_info = cv2.findContours(
         mask,
         cv2.RETR_TREE,
@@ -374,10 +325,6 @@ while not rospy.is_shutdown():
         contours, _ = contours_info
 
     mouth = 0
-
-    # =====================
-    # TRACKING
-    # =====================
 
     if contours:
 
@@ -494,10 +441,6 @@ while not rospy.is_shutdown():
 
         lost_counter += 1
 
-    # =====================
-    # SEARCH MODE
-    # =====================
-
     if lost_counter > SEARCH_TIMEOUT:
 
         current_mode = "SEARCHING"
@@ -559,10 +502,6 @@ while not rospy.is_shutdown():
             ) * 0.15
         )
 
-    # =====================
-    # SERIAL DATA
-    # =====================
-
     serial_data = (
         f"{smooth_yaw},"
         f"{smooth_pitch},"
@@ -588,10 +527,6 @@ while not rospy.is_shutdown():
     pub.publish(
         serial_data
     )
-
-    # =====================
-    # DISPLAY
-    # =====================
 
     cv2.putText(
         frame,
