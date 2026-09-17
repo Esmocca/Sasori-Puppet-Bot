@@ -3,7 +3,6 @@
 
 Adafruit_PWMServoDriver pca;
 
-// ===== CHANNEL PCA9685 =====
 #define SERVO_MOUTH  0
 #define SERVO_PITCH  1
 #define SERVO_YAW    2
