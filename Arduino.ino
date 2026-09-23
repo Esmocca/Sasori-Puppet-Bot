@@ -57,9 +57,6 @@ void setServo(
   );
 }
 
-// ======================================
-// BUZZER
-// ======================================
 
 void beep(
   int freq,
@@ -93,21 +90,17 @@ void lowBatteryTone()
 
 void fullBatteryTone()
 {
-  tone(BUZZER_PIN, 1319, 90);   // E6
+  tone(BUZZER_PIN, 1319, 90); 
   delay(110);
 
-  tone(BUZZER_PIN, 1568, 90);   // G6
+  tone(BUZZER_PIN, 1568, 90);
   delay(110);
 
-  tone(BUZZER_PIN, 2093, 180);  // C7
+  tone(BUZZER_PIN, 2093, 180);
   delay(220);
 
   noTone(BUZZER_PIN);
 }
-
-// ======================================
-// APPLY SERVO
-// ======================================
 
 void applyServo()
 {
@@ -127,9 +120,6 @@ void applyServo()
   );
 }
 
-// ======================================
-// SETUP
-// ======================================
 
 void setup()
 {
