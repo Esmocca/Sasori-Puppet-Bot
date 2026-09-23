@@ -16,10 +16,6 @@ int currentYaw   = 90;
 int currentPitch = 80;
 int currentMouth = 0;
 
-// ======================================
-// SERVO
-// ======================================
-
 int angleToPulse(int angle)
 {
   return map(
